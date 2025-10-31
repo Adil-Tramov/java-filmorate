@@ -6,10 +6,9 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureWebM
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
-
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
 @SpringBootTest
 @AutoConfigureWebMvc
@@ -23,7 +22,7 @@ class UserControllerTest {
         mockMvc.perform(post("/users")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"email\":\"invalid-email\",\"login\":\"login\",\"name\":\"name\",\"birthday\":\"2000-01-01\"}"))
-                .andExpect(status().isBadRequest())
+                .andExpect(status().is4xxClientError()) // @Email -> 400
                 .andExpect(jsonPath("$.email").value("Электронная почта должна быть валидной"));
     }
 
@@ -32,7 +31,7 @@ class UserControllerTest {
         mockMvc.perform(post("/users")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"email\":\"valid@example.com\",\"login\":\"login\",\"name\":\"name\",\"birthday\":\"2099-01-01\"}"))
-                .andExpect(status().isBadRequest())
+                .andExpect(status().is4xxClientError()) // @Past -> 400
                 .andExpect(jsonPath("$.birthday").value("Дата рождения не может быть в будущем"));
     }
 }

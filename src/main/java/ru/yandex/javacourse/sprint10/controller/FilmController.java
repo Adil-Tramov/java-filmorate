@@ -27,7 +27,8 @@ public class FilmController {
     @PostMapping
     public Film createFilm(@Valid @RequestBody Film film) {
         if (film.getReleaseDate().isBefore(MIN_RELEASE_DATE)) {
-            throw new ValidationException("Дата релиза — не раньше 28 декабря 1895 года");
+            log.warn("Попытка создания фильма с датой релиза до {}: {}", MIN_RELEASE_DATE, film.getReleaseDate());
+            throw new ValidationException("Дата релиза — не раньше " + MIN_RELEASE_DATE);
         }
         film.setId(idGenerator.getAndIncrement());
         films.add(film);
@@ -38,8 +39,10 @@ public class FilmController {
     @PutMapping
     public Film updateFilm(@Valid @RequestBody Film film) {
         if (film.getReleaseDate().isBefore(MIN_RELEASE_DATE)) {
-            throw new ValidationException("Дата релиза — не раньше 28 декабря 1895 года");
+            log.warn("Попытка обновления фильма с датой релиза до {}: {}", MIN_RELEASE_DATE, film.getReleaseDate());
+            throw new ValidationException("Дата релиза — не раньше " + MIN_RELEASE_DATE);
         }
+
         for (int i = 0; i < films.size(); i++) {
             if (films.get(i).getId().equals(film.getId())) {
                 films.set(i, film);
@@ -47,6 +50,7 @@ public class FilmController {
                 return film;
             }
         }
+        log.warn("Попытка обновления несуществующего фильма с id={}", film.getId());
         throw new ValidationException("Фильм с id=" + film.getId() + " не найден");
     }
 

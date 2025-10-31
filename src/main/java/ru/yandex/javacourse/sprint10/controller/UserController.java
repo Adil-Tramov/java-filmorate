@@ -39,6 +39,7 @@ public class UserController {
                 return user;
             }
         }
+        log.warn("Попытка обновления несуществующего пользователя с id={}", user.getId());
         throw new ValidationException("Пользователь с id=" + user.getId() + " не найден");
     }
 
