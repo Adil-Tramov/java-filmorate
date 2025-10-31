@@ -1,15 +1,19 @@
 package ru.yandex.javacourse.sprint10.controller;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
+
+import jakarta.validation.Valid;
 import ru.yandex.javacourse.sprint10.exception.ValidationException;
 import ru.yandex.javacourse.sprint10.model.Film;
-import jakarta.validation.Valid;
+
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -51,7 +55,7 @@ public class FilmController {
             }
         }
         log.warn("Попытка обновления несуществующего фильма с id={}", film.getId());
-        throw new ValidationException("Фильм с id=" + film.getId() + " не найден");
+        throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Фильм с id=" + film.getId() + " не найден");
     }
 
     @GetMapping
