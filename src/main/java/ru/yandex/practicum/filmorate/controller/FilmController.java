@@ -37,15 +37,11 @@ public class FilmController {
     private final AtomicLong idGen = new AtomicLong(1);
 
     @GetMapping
-    public Collection<Film> findAll() {
-        return films.values();
-    }
+    public Collection<Film> findAll() { return films.values(); }
 
     @GetMapping("/{id}")
     public Film get(@PathVariable long id) {
-        return films.computeIfAbsent(id, k -> {
-            throw new NotFoundException("Film not found");
-        });
+        return films.computeIfAbsent(id, k -> { throw new NotFoundException("Film not found"); });
     }
 
     @PostMapping
@@ -59,25 +55,17 @@ public class FilmController {
 
     @PutMapping
     public Film update(@Valid @RequestBody Film film) {
-        if (!films.containsKey(film.getId())) {
-            throw new NotFoundException("Film not found");
-        }
+        if (!films.containsKey(film.getId())) throw new NotFoundException("Film not found");
         validateReleaseDate(film.getReleaseDate());
         films.put(film.getId(), film);
         return film;
     }
 
     @PutMapping("/{id}/like/{userId}")
-    public void addLike(@PathVariable long id, @PathVariable long userId) {
-        Film film = get(id);
-        film.getLikes().add(userId);
-    }
+    public void addLike(@PathVariable long id, @PathVariable long userId) { get(id).getLikes().add(userId); }
 
     @DeleteMapping("/{id}/like/{userId}")
-    public void removeLike(@PathVariable long id, @PathVariable long userId) {
-        Film film = get(id);
-        film.getLikes().remove(userId);
-    }
+    public void removeLike(@PathVariable long id, @PathVariable long userId) { get(id).getLikes().remove(userId); }
 
     @GetMapping("/popular")
     public List<Film> popular(@RequestParam(defaultValue = "10") int count) {
@@ -89,8 +77,7 @@ public class FilmController {
     }
 
     private void validateReleaseDate(LocalDate date) {
-        if (date != null && date.isBefore(CINEMA_BIRTHDAY)) {
+        if (date != null && date.isBefore(CINEMA_BIRTHDAY))
             throw new ValidationException("Film release date must be after 1895-12-28");
-        }
     }
 }

@@ -12,9 +12,4 @@ public class ErrorHandler {
     public ResponseEntity<String> handleValidation(MethodArgumentNotValidException ex) {
         return ResponseEntity.badRequest().body("Validation error");
     }
-
-    @ExceptionHandler(ValidationException.class)
-    public ResponseEntity<String> handleCustomValidation(ValidationException ex) {
-        return ResponseEntity.badRequest().body(ex.getMessage());
-    }
 }

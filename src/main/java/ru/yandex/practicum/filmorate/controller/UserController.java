@@ -1,6 +1,7 @@
 package ru.yandex.practicum.filmorate.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Scope;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -15,7 +16,6 @@ import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
 
 import jakarta.validation.Valid;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -27,42 +27,33 @@ import java.util.concurrent.atomic.AtomicLong;
 @RestController
 @RequestMapping("/users")
 @RequiredArgsConstructor
+@Scope("prototype")
 public class UserController {
 
     private final Map<Long, User> users = new HashMap<>();
     private final AtomicLong idGen = new AtomicLong(1);
 
     @GetMapping
-    public Collection<User> findAll() {
-        return users.values();
-    }
+    public Collection<User> findAll() { return users.values(); }
 
     @GetMapping("/{id}")
     public User get(@PathVariable long id) {
-        return users.computeIfAbsent(id, k -> {
-            throw new NotFoundException("User not found");
-        });
+        return users.computeIfAbsent(id, k -> { throw new NotFoundException("User not found"); });
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public User create(@Valid @RequestBody User user) {
         user.setId(idGen.getAndIncrement());
-        if (user.getName() == null || user.getName().isBlank()) {
-            user.setName(user.getLogin());
-        }
+        if (user.getName() == null || user.getName().isBlank()) user.setName(user.getLogin());
         users.put(user.getId(), user);
         return user;
     }
 
     @PutMapping
     public User update(@Valid @RequestBody User user) {
-        if (!users.containsKey(user.getId())) {
-            throw new NotFoundException("User not found");
-        }
-        if (user.getName() == null || user.getName().isBlank()) {
-            user.setName(user.getLogin());
-        }
+        if (!users.containsKey(user.getId())) throw new NotFoundException("User not found");
+        if (user.getName() == null || user.getName().isBlank()) user.setName(user.getLogin());
         users.put(user.getId(), user);
         return user;
     }
@@ -87,9 +78,7 @@ public class UserController {
     public List<User> friends(@PathVariable long id) {
         Set<Long> ids = get(id).getFriends();
         List<User> list = new ArrayList<>(ids.size());
-        for (Long fId : ids) {
-            list.add(users.get(fId));
-        }
+        for (Long fId : ids) list.add(users.get(fId));
         return list;
     }
 
@@ -99,9 +88,7 @@ public class UserController {
         Set<Long> set2 = new HashSet<>(get(otherId).getFriends());
         set1.retainAll(set2);
         List<User> list = new ArrayList<>(set1.size());
-        for (Long fId : set1) {
-            list.add(users.get(fId));
-        }
+        for (Long fId : set1) list.add(users.get(fId));
         return list;
     }
 }
