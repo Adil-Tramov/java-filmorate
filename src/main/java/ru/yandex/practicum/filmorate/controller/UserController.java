@@ -14,46 +14,58 @@ import java.util.Collection;
 @RestController
 @RequestMapping("/users")
 public class UserController {
+
     private final UserStorage storage;
     private final UserService service;
 
     @Autowired
-    public UserController(UserStorage storage, UserService service) {
+    public UserController(final UserStorage storage, final UserService service) {
         this.storage = storage;
         this.service = service;
     }
 
     @GetMapping
-    public Collection<User> all() { return storage.findAll(); }
+    public Collection<User> all() {
+        return storage.findAll();
+    }
 
     @GetMapping("/{id}")
-    public User get(@PathVariable long id) {
+    public User get(@PathVariable final long id) {
         return storage.findById(id)
                 .orElseThrow(() -> new ValidationException("Пользователь не найден"));
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public User create(@Valid @RequestBody User user) { return storage.create(user); }
+    public User create(@Valid @RequestBody final User user) {
+        return storage.create(user);
+    }
 
     @PutMapping
-    public User update(@Valid @RequestBody User user) { return storage.update(user); }
+    public User update(@Valid @RequestBody final User user) {
+        return storage.update(user);
+    }
 
     @PutMapping("/{id}/friends/{friendId}")
-    public void addFriend(@PathVariable long id, @PathVariable long friendId) {
+    public void addFriend(@PathVariable final long id,
+                          @PathVariable final long friendId) {
         service.addFriend(id, friendId);
     }
 
     @DeleteMapping("/{id}/friends/{friendId}")
-    public void removeFriend(@PathVariable long id, @PathVariable long friendId) {
+    public void removeFriend(@PathVariable final long id,
+                             @PathVariable final long friendId) {
         service.removeFriend(id, friendId);
     }
 
     @GetMapping("/{id}/friends")
-    public Collection<User> friends(@PathVariable long id) { return service.friends(id); }
+    public Collection<User> friends(@PathVariable final long id) {
+        return service.friends(id);
+    }
 
     @GetMapping("/{id}/friends/common/{otherId}")
-    public Collection<User> common(@PathVariable long id, @PathVariable long otherId) {
+    public Collection<User> common(@PathVariable final long id,
+                                   @PathVariable final long otherId) {
         return service.commonFriends(id, otherId);
     }
 }

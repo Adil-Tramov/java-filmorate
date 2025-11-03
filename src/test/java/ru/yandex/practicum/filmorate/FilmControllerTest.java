@@ -19,12 +19,15 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 class FilmControllerTest {
 
-    @Autowired MockMvc mvc;
-    @Autowired ObjectMapper mapper;
+    @Autowired
+    private MockMvc mvc;
+
+    @Autowired
+    private ObjectMapper mapper;
 
     @Test
     void createFilm() throws Exception {
-        Film f = film("Name", "Description", LocalDate.of(2000,1,1), 100);
+        Film f = film("Name", "Description", LocalDate.of(2000, 1, 1), 100);
         mvc.perform(post("/films")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsString(f)))
@@ -34,7 +37,7 @@ class FilmControllerTest {
 
     @Test
     void validationReleaseDate() throws Exception {
-        Film f = film("Old", "Too old", LocalDate.of(1894,12,27), 60);
+        Film f = film("Old", "Too old", LocalDate.of(1894, 12, 27), 60);
         mvc.perform(post("/films")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsString(f)))
@@ -43,24 +46,28 @@ class FilmControllerTest {
 
     @Test
     void likesAndPopular() throws Exception {
-        long user1 = 1, user2 = 2, user3 = 3;
-        long film1 = createFilm(film("f1", "d1", LocalDate.of(2001,1,1), 90));
-        long film2 = createFilm(film("f2", "d2", LocalDate.of(2002,2,2), 95));
-        long film3 = createFilm(film("f3", "d3", LocalDate.of(2003,3,3), 100));
+        long user1 = 1;
+        long user2 = 2;
+        long user3 = 3;
+        long film1 = createFilm(film("f1", "d1", LocalDate.of(2001, 1, 1), 90));
+        long film2 = createFilm(film("f2", "d2", LocalDate.of(2002, 2, 2), 95));
+        long film3 = createFilm(film("f3", "d3", LocalDate.of(2003, 3, 3), 100));
 
-        like(film3, user1); like(film3, user2); like(film3, user3);
+        like(film3, user1);
+        like(film3, user2);
+        like(film3, user3);
         like(film2, user1);
 
         mvc.perform(get("/films/popular?count=2"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(2))
-                .andExpect(jsonPath("$[0].id").value((int)film3))
-                .andExpect(jsonPath("$[1].id").value((int)film2));
+                .andExpect(jsonPath("$[0].id").value((int) film3))
+                .andExpect(jsonPath("$[1].id").value((int) film2));
 
         unlike(film3, user3);
 
         mvc.perform(get("/films/popular?count=1"))
-                .andExpect(jsonPath("$[0].id").value((int)film3));
+                .andExpect(jsonPath("$[0].id").value((int) film3));
     }
 
     @Test
@@ -69,7 +76,10 @@ class FilmControllerTest {
                 .andExpect(status().isNotFound());
     }
 
-    private Film film(String name, String desc, LocalDate date, int duration) {
+    private Film film(final String name,
+                      final String desc,
+                      final LocalDate date,
+                      final int duration) {
         Film f = new Film();
         f.setName(name);
         f.setDescription(desc);
@@ -78,20 +88,22 @@ class FilmControllerTest {
         return f;
     }
 
-    private long createFilm(Film f) throws Exception {
+    private long createFilm(final Film f) throws Exception {
         String resp = mvc.perform(post("/films")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsString(f)))
-                .andReturn().getResponse().getContentAsString();
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
         return mapper.readTree(resp).get("id").asLong();
     }
 
-    private void like(long filmId, long userId) throws Exception {
+    private void like(final long filmId, final long userId) throws Exception {
         mvc.perform(put("/films/{id}/like/{userId}", filmId, userId))
                 .andExpect(status().isOk());
     }
 
-    private void unlike(long filmId, long userId) throws Exception {
+    private void unlike(final long filmId, final long userId) throws Exception {
         mvc.perform(delete("/films/{id}/like/{userId}", filmId, userId))
                 .andExpect(status().isOk());
     }

@@ -12,19 +12,19 @@ public class ErrorHandler {
 
     @ExceptionHandler(ValidationException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public String handleValidation(ValidationException e) {
+    public String handleValidation(final ValidationException e) {
         return e.getMessage();
     }
 
     @ExceptionHandler(NotFoundException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
-    public String handleNotFound(NotFoundException e) {
+    public String handleNotFound(final NotFoundException e) {
         return e.getMessage();
     }
 
     @ExceptionHandler
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public String handleDefault(Exception e) {
+    public String handleDefault(final Exception e) {
         return e.getMessage();
     }
 }
