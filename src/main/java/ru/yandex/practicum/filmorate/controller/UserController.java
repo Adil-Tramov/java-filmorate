@@ -1,71 +1,107 @@
 package ru.yandex.practicum.filmorate.controller;
 
-import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.*;
-import ru.yandex.practicum.filmorate.exception.ValidationException;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
+import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
-import ru.yandex.practicum.filmorate.service.UserService;
-import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 
+import jakarta.validation.Valid;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
 
 @RestController
 @RequestMapping("/users")
+@RequiredArgsConstructor
 public class UserController {
 
-    private final UserStorage storage;
-    private final UserService service;
-
-    @Autowired
-    public UserController(final UserStorage storage, final UserService service) {
-        this.storage = storage;
-        this.service = service;
-    }
+    private final Map<Long, User> users = new HashMap<>();
+    private final AtomicLong idGen = new AtomicLong(1);
 
     @GetMapping
-    public Collection<User> all() {
-        return storage.findAll();
+    public Collection<User> findAll() {
+        return users.values();
     }
 
     @GetMapping("/{id}")
-    public User get(@PathVariable final long id) {
-        return storage.findById(id)
-                .orElseThrow(() -> new ValidationException("Пользователь не найден"));
+    public User get(@PathVariable long id) {
+        return users.computeIfAbsent(id, k -> {
+            throw new NotFoundException("User not found");
+        });
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public User create(@Valid @RequestBody final User user) {
-        return storage.create(user);
+    public User create(@Valid @RequestBody User user) {
+        user.setId(idGen.getAndIncrement());
+        if (user.getName() == null || user.getName().isBlank()) {
+            user.setName(user.getLogin());
+        }
+        users.put(user.getId(), user);
+        return user;
     }
 
     @PutMapping
-    public User update(@Valid @RequestBody final User user) {
-        return storage.update(user);
+    public User update(@Valid @RequestBody User user) {
+        if (!users.containsKey(user.getId())) {
+            throw new NotFoundException("User not found");
+        }
+        if (user.getName() == null || user.getName().isBlank()) {
+            user.setName(user.getLogin());
+        }
+        users.put(user.getId(), user);
+        return user;
     }
 
     @PutMapping("/{id}/friends/{friendId}")
-    public void addFriend(@PathVariable final long id,
-                          @PathVariable final long friendId) {
-        service.addFriend(id, friendId);
+    public void addFriend(@PathVariable long id, @PathVariable long friendId) {
+        User user = get(id);
+        User friend = get(friendId);
+        user.getFriends().add(friendId);
+        friend.getFriends().add(id);
     }
 
     @DeleteMapping("/{id}/friends/{friendId}")
-    public void removeFriend(@PathVariable final long id,
-                             @PathVariable final long friendId) {
-        service.removeFriend(id, friendId);
+    public void removeFriend(@PathVariable long id, @PathVariable long friendId) {
+        User user = get(id);
+        User friend = get(friendId);
+        user.getFriends().remove(friendId);
+        friend.getFriends().remove(id);
     }
 
     @GetMapping("/{id}/friends")
-    public Collection<User> friends(@PathVariable final long id) {
-        return service.friends(id);
+    public List<User> friends(@PathVariable long id) {
+        Set<Long> ids = get(id).getFriends();
+        List<User> list = new ArrayList<>(ids.size());
+        for (Long fId : ids) {
+            list.add(users.get(fId));
+        }
+        return list;
     }
 
     @GetMapping("/{id}/friends/common/{otherId}")
-    public Collection<User> common(@PathVariable final long id,
-                                   @PathVariable final long otherId) {
-        return service.commonFriends(id, otherId);
+    public List<User> common(@PathVariable long id, @PathVariable long otherId) {
+        Set<Long> set1 = new HashSet<>(get(id).getFriends());
+        Set<Long> set2 = new HashSet<>(get(otherId).getFriends());
+        set1.retainAll(set2);
+        List<User> list = new ArrayList<>(set1.size());
+        for (Long fId : set1) {
+            list.add(users.get(fId));
+        }
+        return list;
     }
 }

@@ -1,65 +1,83 @@
 package ru.yandex.practicum.filmorate.controller;
 
-import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
-import ru.yandex.practicum.filmorate.service.FilmService;
-import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 
+import jakarta.validation.Valid;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 
 @RestController
 @RequestMapping("/films")
+@RequiredArgsConstructor
 public class FilmController {
 
-    private final FilmStorage storage;
-    private final FilmService service;
-
-    @Autowired
-    public FilmController(final FilmStorage storage, final FilmService service) {
-        this.storage = storage;
-        this.service = service;
-    }
+    private final Map<Long, Film> films = new HashMap<>();
+    private final AtomicLong idGen = new AtomicLong(1);
 
     @GetMapping
-    public Collection<Film> all() {
-        return storage.findAll();
+    public Collection<Film> findAll() {
+        return films.values();
     }
 
     @GetMapping("/{id}")
-    public Film get(@PathVariable final long id) {
-        return storage.findById(id)
-                .orElseThrow(() -> new NotFoundException("Фильм не найден"));
+    public Film get(@PathVariable long id) {
+        return films.computeIfAbsent(id, k -> {
+            throw new NotFoundException("Film not found");
+        });
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public Film create(@Valid @RequestBody final Film film) {
-        return storage.create(film);
+    public Film create(@Valid @RequestBody Film film) {
+        film.setId(idGen.getAndIncrement());
+        films.put(film.getId(), film);
+        return film;
     }
 
     @PutMapping
-    public Film update(@Valid @RequestBody final Film film) {
-        return storage.update(film);
+    public Film update(@Valid @RequestBody Film film) {
+        if (!films.containsKey(film.getId())) {
+            throw new NotFoundException("Film not found");
+        }
+        films.put(film.getId(), film);
+        return film;
     }
 
     @PutMapping("/{id}/like/{userId}")
-    public void addLike(@PathVariable final long id,
-                        @PathVariable final long userId) {
-        service.addLike(id, userId);
+    public void addLike(@PathVariable long id, @PathVariable long userId) {
+        Film film = get(id);
+        film.getLikes().add(userId);
     }
 
     @DeleteMapping("/{id}/like/{userId}")
-    public void removeLike(@PathVariable final long id,
-                           @PathVariable final long userId) {
-        service.removeLike(id, userId);
+    public void removeLike(@PathVariable long id, @PathVariable long userId) {
+        Film film = get(id);
+        film.getLikes().remove(userId);
     }
 
     @GetMapping("/popular")
-    public Collection<Film> popular(@RequestParam(defaultValue = "10") final int count) {
-        return service.popular(count);
+    public List<Film> popular(@RequestParam(defaultValue = "10") int count) {
+        return films.values()
+                .stream()
+                .sorted((f1, f2) -> Integer.compare(f2.getLikes().size(), f1.getLikes().size()))
+                .limit(count)
+                .collect(ArrayList::new, ArrayList::add, ArrayList::addAll);
     }
 }
