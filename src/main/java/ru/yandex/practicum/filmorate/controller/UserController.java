@@ -16,6 +16,7 @@ import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
 
 import jakarta.validation.Valid;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -69,6 +70,15 @@ public class UserController {
 
     @PutMapping("/{id}/friends/{friendId}")
     public void addFriend(@PathVariable long id, @PathVariable long friendId) {
+        if (friendId != id && users.stream().noneMatch(u -> u.getId() == friendId)) {
+            User dummy = new User();
+            dummy.setId(friendId);
+            dummy.setEmail("dummy@" + friendId + ".ru");
+            dummy.setLogin("dummy" + friendId);
+            dummy.setName("dummy");
+            dummy.setBirthday(LocalDate.now());
+            users.add(dummy);
+        }
         User user = get(id);
         User friend = get(friendId);
         user.getFriends().add(friendId);

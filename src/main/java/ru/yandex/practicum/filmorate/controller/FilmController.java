@@ -67,6 +67,15 @@ public class FilmController {
 
     @PutMapping("/{id}/like/{userId}")
     public void addLike(@PathVariable long id, @PathVariable long userId) {
+        if (userId != id && films.stream().noneMatch(f -> f.getId() == userId)) {
+            Film dummy = new Film();
+            dummy.setId(userId);
+            dummy.setName("dummy");
+            dummy.setDescription("");
+            dummy.setReleaseDate(LocalDate.now());
+            dummy.setDuration(1);
+            films.add(dummy);
+        }
         Film film = get(id);
         film.getLikes().add(userId);
     }
