@@ -1,7 +1,7 @@
 package ru.yandex.practicum.filmorate.controller;
 
-import lombok.RequiredArgsConstructor;
-import org.springframework.context.annotation.Scope;
+import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -14,89 +14,58 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
-import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.service.FilmService;
+import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 
-import jakarta.validation.Valid;
-import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicLong;
 
 @RestController
 @RequestMapping("/films")
-@RequiredArgsConstructor
-@Scope("prototype")
 public class FilmController {
+    private final FilmStorage storage;
+    private final FilmService service;
 
-    private static final LocalDate CINEMA_BIRTHDAY = LocalDate.of(1895, 12, 28);
-    private final List<Film> films = new ArrayList<>();
-    private final AtomicLong idGen = new AtomicLong(1);
+    @Autowired
+    public FilmController(FilmStorage storage, FilmService service) {
+        this.storage = storage;
+        this.service = service;
+    }
 
     @GetMapping
-    public Collection<Film> findAll() {
-        return films;
+    public Collection<Film> all() {
+        return storage.findAll();
     }
 
     @GetMapping("/{id}")
     public Film get(@PathVariable long id) {
-        return films.stream()
-                .filter(f -> f.getId() == id)
-                .findFirst()
-                .orElseThrow(() -> new NotFoundException("Film not found"));
+        return storage.findById(id)
+                .orElseThrow(() -> new NotFoundException("Фильм не найден"));
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public Film create(@Valid @RequestBody Film film) {
-        validateReleaseDate(film.getReleaseDate());
-        film.setId(idGen.getAndIncrement());
-        films.add(film);
-        return film;
+        return storage.create(film);
     }
 
     @PutMapping
     public Film update(@Valid @RequestBody Film film) {
-        Film old = get(film.getId());
-        int idx = films.indexOf(old);
-        validateReleaseDate(film.getReleaseDate());
-        films.set(idx, film);
-        return film;
+        return storage.update(film);
     }
 
     @PutMapping("/{id}/like/{userId}")
     public void addLike(@PathVariable long id, @PathVariable long userId) {
-        if (userId != id && films.stream().noneMatch(f -> f.getId() == userId)) {
-            Film dummy = new Film();
-            dummy.setId(userId);
-            dummy.setName("dummy");
-            dummy.setDescription("");
-            dummy.setReleaseDate(LocalDate.now());
-            dummy.setDuration(1);
-            films.add(dummy);
-        }
-        Film film = get(id);
-        film.getLikes().add(userId);
+        service.addLike(id, userId);
     }
 
     @DeleteMapping("/{id}/like/{userId}")
     public void removeLike(@PathVariable long id, @PathVariable long userId) {
-        Film film = get(id);
-        film.getLikes().remove(userId);
+        service.removeLike(id, userId);
     }
 
     @GetMapping("/popular")
-    public List<Film> popular(@RequestParam(defaultValue = "10") int count) {
-        return films.stream()
-                .sorted((f1, f2) -> Integer.compare(f2.getLikes().size(), f1.getLikes().size()))
-                .limit(count)
-                .toList();
-    }
-
-    private void validateReleaseDate(LocalDate date) {
-        if (date != null && date.isBefore(CINEMA_BIRTHDAY)) {
-            throw new ValidationException("Release date must be after 1895-12-28");
-        }
+    public Collection<Film> popular(@RequestParam(defaultValue = "10") int count) {
+        return service.popular(count);
     }
 }

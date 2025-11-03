@@ -19,15 +19,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 class UserControllerTest {
 
-    @Autowired
-    private MockMvc mvc;
-
-    @Autowired
-    private ObjectMapper mapper;
+    @Autowired MockMvc mvc;
+    @Autowired ObjectMapper mapper;
 
     @Test
     void createUser() throws Exception {
-        User u = user("a@b.ru", "login", "name", LocalDate.of(2000, 1, 1));
+        User u = user("a@b.ru", "login", "name", LocalDate.of(2000,1,1));
         mvc.perform(post("/users")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsString(u)))
@@ -37,7 +34,7 @@ class UserControllerTest {
 
     @Test
     void createUserFailValidation() throws Exception {
-        User u = user("", "login", "name", LocalDate.of(2000, 1, 1));
+        User u = user("", "login", "name", LocalDate.of(2000,1,1));
         mvc.perform(post("/users")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsString(u)))
@@ -46,9 +43,9 @@ class UserControllerTest {
 
     @Test
     void friendsFlow() throws Exception {
-        long id1 = createUser(user("u1@mail.ru", "u1", "U-One", LocalDate.of(1995, 1, 1)));
-        long id2 = createUser(user("u2@mail.ru", "u2", "U-Two", LocalDate.of(1995, 2, 2)));
-        long id3 = createUser(user("u3@mail.ru", "u3", "U-Three", LocalDate.of(1995, 3, 3)));
+        long id1 = createUser(user("u1@mail.ru", "u1", "U-One", LocalDate.of(1995,1,1)));
+        long id2 = createUser(user("u2@mail.ru", "u2", "U-Two", LocalDate.of(1995,2,2)));
+        long id3 = createUser(user("u3@mail.ru", "u3", "U-Three", LocalDate.of(1995,3,3)));
 
         mvc.perform(put("/users/{id}/friends/{friendId}", id1, id2))
                 .andExpect(status().isOk());
@@ -56,7 +53,7 @@ class UserControllerTest {
         mvc.perform(get("/users/{id}/friends", id1))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1))
-                .andExpect(jsonPath("$[0].id").value((int) id2));
+                .andExpect(jsonPath("$[0].id").value((int)id2));
 
         mvc.perform(put("/users/{id}/friends/{friendId}", id3, id2))
                 .andExpect(status().isOk());
@@ -64,7 +61,7 @@ class UserControllerTest {
         mvc.perform(get("/users/{id}/friends/common/{otherId}", id1, id3))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(1))
-                .andExpect(jsonPath("$[0].id").value((int) id2));
+                .andExpect(jsonPath("$[0].id").value((int)id2));
 
         mvc.perform(delete("/users/{id}/friends/{friendId}", id1, id2))
                 .andExpect(status().isOk());
@@ -79,10 +76,7 @@ class UserControllerTest {
                 .andExpect(status().isNotFound());
     }
 
-    private User user(final String email,
-                      final String login,
-                      final String name,
-                      final LocalDate birthday) {
+    private User user(String email, String login, String name, LocalDate birthday) {
         User u = new User();
         u.setEmail(email);
         u.setLogin(login);
@@ -91,7 +85,7 @@ class UserControllerTest {
         return u;
     }
 
-    private long createUser(final User u) throws Exception {
+    private long createUser(User u) throws Exception {
         String resp = mvc.perform(post("/users")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsString(u)))
