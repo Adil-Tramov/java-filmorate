@@ -21,21 +21,21 @@ public class UserService {
     }
 
     public void addFriend(long userId, long friendId) {
-        User user = getUser(userId);
-        User friend = getUser(friendId);
+        User user = get(userId);
+        User friend = get(friendId);
         user.getFriends().add(friendId);
         friend.getFriends().add(userId);
     }
 
     public void removeFriend(long userId, long friendId) {
-        User user = getUser(userId);
-        User friend = getUser(friendId);
+        User user = get(userId);
+        User friend = get(friendId);
         user.getFriends().remove(friendId);
         friend.getFriends().remove(userId);
     }
 
     public Collection<User> friends(long userId) {
-        return getUser(userId).getFriends()
+        return get(userId).getFriends()
                 .stream()
                 .map(storage::findById)
                 .filter(Optional::isPresent)
@@ -44,8 +44,8 @@ public class UserService {
     }
 
     public Collection<User> commonFriends(long userId, long otherId) {
-        Set<Long> userFriends = getUser(userId).getFriends();
-        Set<Long> otherFriends = getUser(otherId).getFriends();
+        Set<Long> userFriends = get(userId).getFriends();
+        Set<Long> otherFriends = get(otherId).getFriends();
         return userFriends.stream()
                 .filter(otherFriends::contains)
                 .map(storage::findById)

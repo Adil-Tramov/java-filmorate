@@ -31,7 +31,7 @@ public class FilmService {
 
     public void removeLike(long filmId, long userId) {
         Film film = getFilm(filmId);
-        getUser(userId);
+        getUser(userId); // Проверяем существование пользователя
         if (!film.getLikes().remove(userId)) {
             throw new NotFoundException("Лайк не найден");
         }
