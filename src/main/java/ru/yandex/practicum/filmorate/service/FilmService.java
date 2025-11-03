@@ -12,24 +12,27 @@ import java.util.stream.Collectors;
 
 @Service
 public class FilmService {
+
     private final FilmStorage storage;
 
     @Autowired
-    public FilmService(FilmStorage storage) { this.storage = storage; }
+    public FilmService(final FilmStorage storage) {
+        this.storage = storage;
+    }
 
-    public void addLike(long filmId, long userId) {
+    public void addLike(final long filmId, final long userId) {
         Film film = get(filmId);
         film.getLikes().add(userId);
     }
 
-    public void removeLike(long filmId, long userId) {
+    public void removeLike(final long filmId, final long userId) {
         Film film = get(filmId);
         if (!film.getLikes().remove(userId)) {
             throw new NotFoundException("Лайк не найден");
         }
     }
 
-    public Collection<Film> popular(int count) {
+    public Collection<Film> popular(final int count) {
         return storage.findAll()
                 .stream()
                 .sorted(Comparator.comparingInt((Film f) -> f.getLikes().size()).reversed())
@@ -37,7 +40,7 @@ public class FilmService {
                 .collect(Collectors.toList());
     }
 
-    private Film get(long id) {
+    private Film get(final long id) {
         return storage.findById(id)
                 .orElseThrow(() -> new NotFoundException("Фильм не найден"));
     }
