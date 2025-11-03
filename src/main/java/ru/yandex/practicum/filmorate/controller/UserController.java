@@ -71,6 +71,9 @@ public class UserController {
 
     @PutMapping("/{id}/friends/{friendId}")
     public void addFriend(@PathVariable long id, @PathVariable long friendId) {
+        if (id == friendId) {   // ← self-friend разрешён
+            return;
+        }
         User user = get(id);
         User friend = get(friendId);
         user.getFriends().add(friendId);

@@ -69,6 +69,9 @@ public class FilmController {
 
     @PutMapping("/{id}/like/{userId}")
     public void addLike(@PathVariable long id, @PathVariable long userId) {
+        if (id == userId) {
+            return;
+        }
         Film film = get(id);
         film.getLikes().add(userId);
     }
