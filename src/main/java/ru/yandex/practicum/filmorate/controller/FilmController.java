@@ -19,10 +19,9 @@ import ru.yandex.practicum.filmorate.model.Film;
 
 import jakarta.validation.Valid;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 @RestController
@@ -32,20 +31,20 @@ import java.util.concurrent.atomic.AtomicLong;
 public class FilmController {
 
     private static final LocalDate CINEMA_BIRTHDAY = LocalDate.of(1895, 12, 28);
-
-    private final Map<Long, Film> films = new HashMap<>();
+    private final List<Film> films = new ArrayList<>();
     private final AtomicLong idGen = new AtomicLong(1);
 
     @GetMapping
     public Collection<Film> findAll() {
-        return films.values();
+        return films;
     }
 
     @GetMapping("/{id}")
     public Film get(@PathVariable long id) {
-        return films.computeIfAbsent(id, k -> {
-            throw new NotFoundException("Film not found");
-        });
+        return films.stream()
+                .filter(f -> f.getId() == id)
+                .findFirst()
+                .orElseThrow(() -> new NotFoundException("Film not found"));
     }
 
     @PostMapping
@@ -53,25 +52,21 @@ public class FilmController {
     public Film create(@Valid @RequestBody Film film) {
         validateReleaseDate(film.getReleaseDate());
         film.setId(idGen.getAndIncrement());
-        films.put(film.getId(), film);
+        films.add(film);
         return film;
     }
 
     @PutMapping
     public Film update(@Valid @RequestBody Film film) {
-        if (!films.containsKey(film.getId())) {
-            throw new NotFoundException("Film not found");
-        }
+        Film old = get(film.getId());
+        int idx = films.indexOf(old);
         validateReleaseDate(film.getReleaseDate());
-        films.put(film.getId(), film);
+        films.set(idx, film);
         return film;
     }
 
     @PutMapping("/{id}/like/{userId}")
     public void addLike(@PathVariable long id, @PathVariable long userId) {
-        if (id == userId) {
-            return;
-        }
         Film film = get(id);
         film.getLikes().add(userId);
     }
@@ -84,8 +79,7 @@ public class FilmController {
 
     @GetMapping("/popular")
     public List<Film> popular(@RequestParam(defaultValue = "10") int count) {
-        return films.values()
-                .stream()
+        return films.stream()
                 .sorted((f1, f2) -> Integer.compare(f2.getLikes().size(), f1.getLikes().size()))
                 .limit(count)
                 .toList();
@@ -93,7 +87,7 @@ public class FilmController {
 
     private void validateReleaseDate(LocalDate date) {
         if (date != null && date.isBefore(CINEMA_BIRTHDAY)) {
-            throw new ValidationException("Film release date must be after 1895-12-28");
+            throw new ValidationException("Release date must be after 1895-12-28");
         }
     }
 }

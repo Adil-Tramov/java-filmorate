@@ -18,10 +18,8 @@ import ru.yandex.practicum.filmorate.model.User;
 import jakarta.validation.Valid;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -31,19 +29,20 @@ import java.util.concurrent.atomic.AtomicLong;
 @Scope("prototype")
 public class UserController {
 
-    private final Map<Long, User> users = new HashMap<>();
+    private final List<User> users = new ArrayList<>();
     private final AtomicLong idGen = new AtomicLong(1);
 
     @GetMapping
     public Collection<User> findAll() {
-        return users.values();
+        return users;
     }
 
     @GetMapping("/{id}")
     public User get(@PathVariable long id) {
-        return users.computeIfAbsent(id, k -> {
-            throw new NotFoundException("User not found");
-        });
+        return users.stream()
+                .filter(u -> u.getId() == id)
+                .findFirst()
+                .orElseThrow(() -> new NotFoundException("User not found"));
     }
 
     @PostMapping
@@ -53,27 +52,23 @@ public class UserController {
         if (user.getName() == null || user.getName().isBlank()) {
             user.setName(user.getLogin());
         }
-        users.put(user.getId(), user);
+        users.add(user);
         return user;
     }
 
     @PutMapping
     public User update(@Valid @RequestBody User user) {
-        if (!users.containsKey(user.getId())) {
-            throw new NotFoundException("User not found");
-        }
+        User old = get(user.getId());
+        int idx = users.indexOf(old);
         if (user.getName() == null || user.getName().isBlank()) {
             user.setName(user.getLogin());
         }
-        users.put(user.getId(), user);
+        users.set(idx, user);
         return user;
     }
 
     @PutMapping("/{id}/friends/{friendId}")
     public void addFriend(@PathVariable long id, @PathVariable long friendId) {
-        if (id == friendId) {   // ← self-friend разрешён
-            return;
-        }
         User user = get(id);
         User friend = get(friendId);
         user.getFriends().add(friendId);
@@ -93,7 +88,7 @@ public class UserController {
         Set<Long> ids = get(id).getFriends();
         List<User> list = new ArrayList<>(ids.size());
         for (Long fId : ids) {
-            list.add(users.get(fId));
+            list.add(get(fId));
         }
         return list;
     }
@@ -105,7 +100,7 @@ public class UserController {
         set1.retainAll(set2);
         List<User> list = new ArrayList<>(set1.size());
         for (Long fId : set1) {
-            list.add(users.get(fId));
+            list.add(get(fId));
         }
         return list;
     }
