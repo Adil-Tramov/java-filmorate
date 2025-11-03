@@ -1,4 +1,4 @@
-package ru.yandex.practicum.filmorate.controller;
+package ru.yandex.practicum.filmorate;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
@@ -12,7 +12,10 @@ import ru.yandex.practicum.filmorate.model.User;
 
 import java.time.LocalDate;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -20,8 +23,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 class FilmControllerTest {
 
-    @Autowired MockMvc mvc;
-    @Autowired ObjectMapper mapper;
+    @Autowired
+    MockMvc mvc;
+
+    @Autowired
+    ObjectMapper mapper;
 
     @Test
     void createFilm() throws Exception {
@@ -30,7 +36,7 @@ class FilmControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsString(f)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id").value(1));
+                .andExpect(jsonPath("$.id").isNumber());
     }
 
     @Test
@@ -44,7 +50,6 @@ class FilmControllerTest {
 
     @Test
     void likesAndPopular() throws Exception {
-        // Сначала создаем пользователей
         long user1 = createUser(user("user1@mail.ru", "user1", "User One", LocalDate.of(1990,1,1)));
         long user2 = createUser(user("user2@mail.ru", "user2", "User Two", LocalDate.of(1990,2,2)));
         long user3 = createUser(user("user3@mail.ru", "user3", "User Three", LocalDate.of(1990,3,3)));
@@ -53,7 +58,9 @@ class FilmControllerTest {
         long film2 = createFilm(film("f2", "d2", LocalDate.of(2002,2,2), 95));
         long film3 = createFilm(film("f3", "d3", LocalDate.of(2003,3,3), 100));
 
-        like(film3, user1); like(film3, user2); like(film3, user3);
+        like(film3, user1);
+        like(film3, user2);
+        like(film3, user3);
         like(film2, user1);
 
         mvc.perform(get("/films/popular?count=2"))

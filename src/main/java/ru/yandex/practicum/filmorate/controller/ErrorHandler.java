@@ -1,6 +1,7 @@
 package ru.yandex.practicum.filmorate.controller;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -22,9 +23,15 @@ public class ErrorHandler {
         return e.getMessage();
     }
 
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public String handleMethodArgumentNotValid(MethodArgumentNotValidException e) {
+        return "Ошибка валидации: " + e.getBindingResult().getFieldError().getDefaultMessage();
+    }
+
     @ExceptionHandler
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public String handleDefault(Exception e) {
-        return e.getMessage();
+        return "Произошла непредвиденная ошибка: " + e.getMessage();
     }
 }
