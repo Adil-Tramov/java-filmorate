@@ -35,7 +35,7 @@ class ValidationTest {
                 .isInstanceOf(ValidationException.class)
                 .hasMessageContaining("пробелы");
     }
-    
+
     private void validateFilm(final Film f) {
         if (f.getReleaseDate().isBefore(LocalDate.of(1895, 12, 28))) {
             throw new ValidationException("Дата релиза не может быть раньше 28 декабря 1895");
