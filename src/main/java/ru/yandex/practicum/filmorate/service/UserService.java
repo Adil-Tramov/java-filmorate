@@ -13,26 +13,29 @@ import java.util.stream.Collectors;
 
 @Service
 public class UserService {
+
     private final UserStorage storage;
 
     @Autowired
-    public UserService(UserStorage storage) { this.storage = storage; }
+    public UserService(final UserStorage storage) {
+        this.storage = storage;
+    }
 
-    public void addFriend(long userId, long friendId) {
+    public void addFriend(final long userId, final long friendId) {
         User user = get(userId);
         User friend = get(friendId);
         user.getFriends().add(friendId);
         friend.getFriends().add(userId);
     }
 
-    public void removeFriend(long userId, long friendId) {
+    public void removeFriend(final long userId, final long friendId) {
         User user = get(userId);
         User friend = get(friendId);
         user.getFriends().remove(friendId);
         friend.getFriends().remove(userId);
     }
 
-    public Collection<User> friends(long userId) {
+    public Collection<User> friends(final long userId) {
         return get(userId).getFriends()
                 .stream()
                 .map(storage::findById)
@@ -41,7 +44,7 @@ public class UserService {
                 .collect(Collectors.toList());
     }
 
-    public Collection<User> commonFriends(long userId, long otherId) {
+    public Collection<User> commonFriends(final long userId, final long otherId) {
         Set<Long> userFriends = get(userId).getFriends();
         Set<Long> otherFriends = get(otherId).getFriends();
         return userFriends.stream()
@@ -52,7 +55,7 @@ public class UserService {
                 .collect(Collectors.toList());
     }
 
-    private User get(long id) {
+    private User get(final long id) {
         return storage.findById(id)
                 .orElseThrow(() -> new NotFoundException("Пользователь не найден"));
     }
