@@ -13,12 +13,13 @@ import java.util.Optional;
 
 @Component
 public class InMemoryFilmStorage implements FilmStorage {
+
     private final Map<Long, Film> films = new HashMap<>();
     private long counter = 1;
     private static final LocalDate CINEMA_BIRTHDAY = LocalDate.of(1895, 12, 28);
 
     @Override
-    public Film create(Film film) {
+    public Film create(final Film film) {
         validate(film);
         film.setId(counter++);
         films.put(film.getId(), film);
@@ -26,7 +27,7 @@ public class InMemoryFilmStorage implements FilmStorage {
     }
 
     @Override
-    public Film update(Film film) {
+    public Film update(final Film film) {
         validate(film);
         if (!films.containsKey(film.getId())) {
             throw new NotFoundException("Фильм не найден");
@@ -36,15 +37,21 @@ public class InMemoryFilmStorage implements FilmStorage {
     }
 
     @Override
-    public Collection<Film> findAll() { return films.values(); }
+    public Collection<Film> findAll() {
+        return films.values();
+    }
 
     @Override
-    public Optional<Film> findById(long id) { return Optional.ofNullable(films.get(id)); }
+    public Optional<Film> findById(final long id) {
+        return Optional.ofNullable(films.get(id));
+    }
 
     @Override
-    public void delete(long id) { films.remove(id); }
+    public void delete(final long id) {
+        films.remove(id);
+    }
 
-    private void validate(Film f) {
+    private void validate(final Film f) {
         if (f.getReleaseDate().isBefore(CINEMA_BIRTHDAY)) {
             throw new ValidationException("Дата релиза не может быть раньше 28 декабря 1895");
         }
