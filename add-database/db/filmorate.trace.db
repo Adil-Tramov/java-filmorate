@@ -1,0 +1,4 @@
+2025-12-01 17:23:35 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLSyntaxErrorException: Синтаксическая ошибка в выражении SQL "INSERT INTO mpa_ratings (id, name) VALUES (1, 'G'), (2, 'PG'), (3, 'PG-13'), (4, 'R'), (5, 'NC-17') [*]ON DUPLICATE KEY UPDATE name = name"
+Syntax error in SQL statement "INSERT INTO mpa_ratings (id, name) VALUES (1, 'G'), (2, 'PG'), (3, 'PG-13'), (4, 'R'), (5, 'NC-17') [*]ON DUPLICATE KEY UPDATE name = name"; SQL statement:
+INSERT INTO mpa_ratings (id, name) VALUES (1, 'G'), (2, 'PG'), (3, 'PG-13'), (4, 'R'), (5, 'NC-17') ON DUPLICATE KEY UPDATE name = name [42000-212]
