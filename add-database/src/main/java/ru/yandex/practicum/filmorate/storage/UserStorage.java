@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface UserStorage {
+
     List<User> findAll();
 
     Optional<User> findUserById(Long id);
