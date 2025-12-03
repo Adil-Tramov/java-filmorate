@@ -8,8 +8,6 @@ import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.model.MpaRating;
 import ru.yandex.practicum.filmorate.storage.MpaRatingStorage;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
 
@@ -22,14 +20,11 @@ public class MpaRatingDbStorage implements MpaRatingStorage {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    private final RowMapper<MpaRating> mpaRowMapper = new RowMapper<MpaRating>() {
-        @Override
-        public MpaRating mapRow(ResultSet rs, int rowNum) throws SQLException {
-            MpaRating rating = new MpaRating();
-            rating.setId(rs.getInt("id"));
-            rating.setName(rs.getString("name"));
-            return rating;
-        }
+    private final RowMapper<MpaRating> mpaRowMapper = (rs, rowNum) -> {
+        MpaRating rating = new MpaRating();
+        rating.setId(rs.getInt("id"));
+        rating.setName(rs.getString("name"));
+        return rating;
     };
 
     @Override

@@ -2,14 +2,16 @@ package ru.yandex.practicum.filmorate.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class UserService {
     private final UserStorage userStorage;
 
@@ -18,22 +20,19 @@ public class UserService {
     }
 
     public User findById(Long id) {
-        Optional<User> user = userStorage.findUserById(id);
-        if (user.isEmpty()) {
-            throw new RuntimeException("User not found with id: " + id);
-        }
-        return user.get();
+        return userStorage.findUserById(id)
+                .orElseThrow(() -> new NotFoundException("Пользователь не найден с id: " + id));
     }
 
     public User create(User user) {
+        if (user.getName() == null || user.getName().isBlank()) {
+            user.setName(user.getLogin());
+        }
         return userStorage.create(user);
     }
 
     public User update(User user) {
-        Optional<User> existingUser = userStorage.findUserById(user.getId());
-        if (existingUser.isEmpty()) {
-            throw new RuntimeException("User not found with id: " + user.getId());
-        }
+        findById(user.getId());
         return userStorage.update(user);
     }
 

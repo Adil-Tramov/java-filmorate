@@ -3,6 +3,8 @@ package ru.yandex.practicum.filmorate.model;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.Past;
@@ -24,8 +26,9 @@ public class User {
 
     private String name;
 
-    @Past
+    @Past(message = "Дата рождения должна быть в прошлом")
     private LocalDate birthday;
 
+    @JsonIgnore
     private Set<Long> friends;
 }

@@ -5,7 +5,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
 import ru.yandex.practicum.filmorate.model.MpaRating;
 import ru.yandex.practicum.filmorate.service.MpaRatingService;
 
@@ -24,10 +23,6 @@ public class MpaRatingController {
 
     @GetMapping("/{id}")
     public MpaRating findById(@PathVariable Integer id) {
-        MpaRating rating = mpaRatingService.findById(id);
-        if (rating == null) {
-            throw new RuntimeException("MPA rating not found with id: " + id);
-        }
-        return rating;
+        return mpaRatingService.findById(id);
     }
 }

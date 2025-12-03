@@ -5,11 +5,10 @@ import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
+import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
 
@@ -18,17 +17,14 @@ import java.util.Optional;
 public class UserDbStorage implements UserStorage {
     private final JdbcTemplate jdbcTemplate;
 
-    private final RowMapper<User> userRowMapper = new RowMapper<User>() {
-        @Override
-        public User mapRow(ResultSet rs, int rowNum) throws SQLException {
-            User user = new User();
-            user.setId(rs.getLong("id"));
-            user.setEmail(rs.getString("email"));
-            user.setLogin(rs.getString("login"));
-            user.setName(rs.getString("name"));
-            user.setBirthday(rs.getDate("birthday").toLocalDate());
-            return user;
-        }
+    private final RowMapper<User> userRowMapper = (rs, rowNum) -> {
+        User user = new User();
+        user.setId(rs.getLong("id"));
+        user.setEmail(rs.getString("email"));
+        user.setLogin(rs.getString("login"));
+        user.setName(rs.getString("name"));
+        user.setBirthday(rs.getDate("birthday").toLocalDate());
+        return user;
     };
 
     @Override
@@ -62,7 +58,13 @@ public class UserDbStorage implements UserStorage {
     @Override
     public User update(User user) {
         String sql = "UPDATE users SET email = ?, login = ?, name = ?, birthday = ? WHERE id = ?";
-        jdbcTemplate.update(sql, user.getEmail(), user.getLogin(), user.getName(), user.getBirthday(), user.getId());
+        int rowsAffected = jdbcTemplate.update(sql, user.getEmail(), user.getLogin(),
+                user.getName(), user.getBirthday(), user.getId());
+
+        if (rowsAffected == 0) {
+            throw new NotFoundException("Пользователь не найден с id: " + user.getId());
+        }
+
         return user;
     }
 
@@ -74,25 +76,35 @@ public class UserDbStorage implements UserStorage {
 
     @Override
     public void addFriend(Long userId, Long friendId) {
-        String sql = "INSERT INTO friendships (user_id, friend_id, confirmed) VALUES (?, ?, FALSE)";
+        findUserById(userId).orElseThrow(() ->
+                new NotFoundException("Пользователь не найден с id: " + userId));
+        findUserById(friendId).orElseThrow(() ->
+                new NotFoundException("Пользователь не найден с id: " + friendId));
+
+        String sql = "INSERT INTO friendships (user_id, friend_id) VALUES (?, ?)";
         jdbcTemplate.update(sql, userId, friendId);
+        jdbcTemplate.update(sql, friendId, userId);
     }
 
     @Override
     public void removeFriend(Long userId, Long friendId) {
-        String sql = "DELETE FROM friendships WHERE user_id = ? AND friend_id = ?";
-        jdbcTemplate.update(sql, userId, friendId);
+        String sql = "DELETE FROM friendships WHERE (user_id = ? AND friend_id = ?) " +
+                "OR (user_id = ? AND friend_id = ?)";
+        jdbcTemplate.update(sql, userId, friendId, friendId, userId);
     }
 
     @Override
     public List<User> getFriends(Long userId) {
-        String sql = "SELECT u.* FROM users u JOIN friendships f ON u.id = f.friend_id WHERE f.user_id = ? AND f.confirmed = TRUE";
+        String sql = "SELECT u.* FROM users u JOIN friendships f ON u.id = f.friend_id WHERE f.user_id = ?";
         return jdbcTemplate.query(sql, userRowMapper, userId);
     }
 
     @Override
     public List<User> getCommonFriends(Long userId, Long otherUserId) {
-        String sql = "SELECT u.* FROM users u JOIN friendships f1 ON u.id = f1.friend_id JOIN friendships f2 ON u.id = f2.friend_id WHERE f1.user_id = ? AND f2.user_id = ? AND f1.confirmed = TRUE AND f2.confirmed = TRUE";
+        String sql = "SELECT u.* FROM users u " +
+                "JOIN friendships f1 ON u.id = f1.friend_id " +
+                "JOIN friendships f2 ON u.id = f2.friend_id " +
+                "WHERE f1.user_id = ? AND f2.user_id = ?";
         return jdbcTemplate.query(sql, userRowMapper, userId, otherUserId);
     }
 }

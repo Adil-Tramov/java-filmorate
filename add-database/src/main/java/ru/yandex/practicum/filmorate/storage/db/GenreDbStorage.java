@@ -8,8 +8,6 @@ import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.storage.GenreStorage;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
 
@@ -22,14 +20,11 @@ public class GenreDbStorage implements GenreStorage {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    private final RowMapper<Genre> genreRowMapper = new RowMapper<Genre>() {
-        @Override
-        public Genre mapRow(ResultSet rs, int rowNum) throws SQLException {
-            Genre genre = new Genre();
-            genre.setId(rs.getInt("id"));
-            genre.setName(rs.getString("name"));
-            return genre;
-        }
+    private final RowMapper<Genre> genreRowMapper = (rs, rowNum) -> {
+        Genre genre = new Genre();
+        genre.setId(rs.getInt("id"));
+        genre.setName(rs.getString("name"));
+        return genre;
     };
 
     @Override
