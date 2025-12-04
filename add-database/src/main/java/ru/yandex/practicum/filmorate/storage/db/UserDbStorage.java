@@ -9,8 +9,10 @@ import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
 
-import java.util.List;
-import java.util.Optional;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.time.LocalDate;
+import java.util.*;
 
 @Repository
 @RequiredArgsConstructor
@@ -64,7 +66,6 @@ public class UserDbStorage implements UserStorage {
         if (rowsAffected == 0) {
             throw new NotFoundException("Пользователь не найден с id: " + user.getId());
         }
-
         return user;
     }
 
@@ -76,26 +77,25 @@ public class UserDbStorage implements UserStorage {
 
     @Override
     public void addFriend(Long userId, Long friendId) {
-        findUserById(userId).orElseThrow(() ->
-                new NotFoundException("Пользователь не найден с id: " + userId));
-        findUserById(friendId).orElseThrow(() ->
-                new NotFoundException("Пользователь не найден с id: " + friendId));
+        findUserById(userId).orElseThrow(() -> new NotFoundException("Пользователь не найден с id: " + userId));
+        findUserById(friendId).orElseThrow(() -> new NotFoundException("Пользователь не найден с id: " + friendId));
 
+        // ОДНОСТОРОННЯЯ ДРУЖБА: только одна запись
         String sql = "INSERT INTO friendships (user_id, friend_id) VALUES (?, ?)";
         jdbcTemplate.update(sql, userId, friendId);
-        jdbcTemplate.update(sql, friendId, userId);
     }
 
     @Override
     public void removeFriend(Long userId, Long friendId) {
-        String sql = "DELETE FROM friendships WHERE (user_id = ? AND friend_id = ?) " +
-                "OR (user_id = ? AND friend_id = ?)";
-        jdbcTemplate.update(sql, userId, friendId, friendId, userId);
+        String sql = "DELETE FROM friendships WHERE user_id = ? AND friend_id = ?";
+        jdbcTemplate.update(sql, userId, friendId);
     }
 
     @Override
     public List<User> getFriends(Long userId) {
-        String sql = "SELECT u.* FROM users u JOIN friendships f ON u.id = f.friend_id WHERE f.user_id = ?";
+        String sql = "SELECT u.* FROM users u " +
+                "JOIN friendships f ON u.id = f.friend_id " +
+                "WHERE f.user_id = ?";
         return jdbcTemplate.query(sql, userRowMapper, userId);
     }
 

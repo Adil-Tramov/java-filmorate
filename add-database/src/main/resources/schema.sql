@@ -1,13 +1,13 @@
-DROP TABLE IF EXISTS friendships, likes, film_genres, films, users, genres, mpa_ratings;
+DROP TABLE IF EXISTS likes, film_genres, friendships, films, users, genres, mpa_ratings;
 
 CREATE TABLE IF NOT EXISTS mpa_ratings (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(50) NOT NULL
+    id INTEGER PRIMARY KEY,
+    name VARCHAR(10) NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS genres (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(100) NOT NULL
+    id INTEGER PRIMARY KEY,
+    name VARCHAR(50) NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS users (
@@ -15,25 +15,22 @@ CREATE TABLE IF NOT EXISTS users (
     email VARCHAR(255) NOT NULL UNIQUE,
     login VARCHAR(255) NOT NULL UNIQUE,
     name VARCHAR(255),
-    birthday DATE NOT NULL,
-    CONSTRAINT chk_email_format CHECK (email LIKE '%@%'),
-    CONSTRAINT chk_login_format CHECK (login NOT LIKE '% %')
+    birthday DATE NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS films (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
-    description VARCHAR(200),
+    description VARCHAR(200) NOT NULL,
     release_date DATE NOT NULL,
-    duration INT NOT NULL,
-    mpa_rating_id INT,
-    CONSTRAINT fk_film_mpa FOREIGN KEY (mpa_rating_id) REFERENCES mpa_ratings(id) ON DELETE SET NULL,
-    CONSTRAINT chk_duration CHECK (duration > 0)
+    duration INTEGER NOT NULL,
+    mpa_rating_id INTEGER,
+    FOREIGN KEY (mpa_rating_id) REFERENCES mpa_ratings(id) ON DELETE SET NULL
 );
 
 CREATE TABLE IF NOT EXISTS film_genres (
     film_id BIGINT NOT NULL,
-    genre_id INT NOT NULL,
+    genre_id INTEGER NOT NULL,
     PRIMARY KEY (film_id, genre_id),
     FOREIGN KEY (film_id) REFERENCES films(id) ON DELETE CASCADE,
     FOREIGN KEY (genre_id) REFERENCES genres(id) ON DELETE CASCADE
@@ -54,10 +51,3 @@ CREATE TABLE IF NOT EXISTS friendships (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (friend_id) REFERENCES users(id) ON DELETE CASCADE
 );
-
-CREATE INDEX idx_users_email ON users(email);
-CREATE INDEX idx_users_login ON users(login);
-CREATE INDEX idx_films_name ON films(name);
-CREATE INDEX idx_friendships_friend_id ON friendships(friend_id);
-CREATE INDEX idx_likes_user_id ON likes(user_id);
-CREATE INDEX idx_film_genres_genre_id ON film_genres(genre_id);
