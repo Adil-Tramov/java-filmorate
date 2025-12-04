@@ -78,7 +78,6 @@ public class UserDbStorage implements UserStorage {
         findUserById(userId).orElseThrow(() -> new NotFoundException("Пользователь не найден с id: " + userId));
         findUserById(friendId).orElseThrow(() -> new NotFoundException("Пользователь не найден с id: " + friendId));
 
-        // ОДНОСТОРОННЯЯ ДРУЖБА: только одна запись
         String sql = "INSERT INTO friendships (user_id, friend_id) VALUES (?, ?)";
         jdbcTemplate.update(sql, userId, friendId);
     }

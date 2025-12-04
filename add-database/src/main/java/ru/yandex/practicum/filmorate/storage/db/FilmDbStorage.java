@@ -171,8 +171,7 @@ public class FilmDbStorage implements FilmStorage {
         Map<Long, Set<Genre>> filmGenres = new HashMap<>();
         jdbcTemplate.query(sql, rs -> {
             Long filmId = rs.getLong("film_id");
-            Genre genre = new Genre(rs.getInt("id"), rs.getString("name"));
-            filmGenres.computeIfAbsent(filmId, k -> new HashSet<>()).add(genre);
+            filmGenres.computeIfAbsent(filmId, k -> new HashSet<>()).add(new Genre(rs.getInt("id"), rs.getString("name")));
         });
 
         films.forEach(f -> f.setGenres(filmGenres.getOrDefault(f.getId(), new HashSet<>())));

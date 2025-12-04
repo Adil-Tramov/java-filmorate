@@ -1,4 +1,4 @@
-DROP TABLE IF EXISTS likes, film_genres, friendships, films, users, genres, mpa_ratings;
+DROP TABLE IF EXISTS likes, film_genres, friendships, films, users, genres, mpa_ratings CASCADE;
 
 CREATE TABLE IF NOT EXISTS mpa_ratings (
     id INTEGER PRIMARY KEY,
