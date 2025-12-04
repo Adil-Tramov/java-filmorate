@@ -7,7 +7,6 @@ import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 import ru.practicum.filmorate.model.Film;
 import ru.practicum.filmorate.model.Genre;
-import ru.practicum.filmorate.model.Mpa;
 import ru.practicum.filmorate.storage.FilmStorage;
 
 import java.sql.Date;
