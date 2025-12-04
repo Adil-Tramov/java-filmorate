@@ -1,6 +1,5 @@
 package ru.practicum.filmorate.controller;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -29,8 +28,8 @@ public class MpaController {
     @GetMapping("/{id}")
     public ResponseEntity<Mpa> getById(@PathVariable int id) {
         return mpaStorage.findById(id)
-                .map(mpa -> new ResponseEntity<Mpa>(mpa, HttpStatus.OK))
-                .orElse(new ResponseEntity<Mpa>(HttpStatus.NOT_FOUND));
+                .map(m -> ResponseEntity.ok(m))
+                .orElse(ResponseEntity.notFound().build());
     }
 }
 

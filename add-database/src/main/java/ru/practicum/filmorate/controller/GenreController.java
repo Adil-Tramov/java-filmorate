@@ -29,8 +29,8 @@ public class GenreController {
     @GetMapping("/{id}")
     public ResponseEntity<Genre> getById(@PathVariable int id) {
         return genreStorage.findById(id)
-                .map(g -> new ResponseEntity<Genre>(g, HttpStatus.OK))
-                .orElse(new ResponseEntity<Genre>(HttpStatus.NOT_FOUND));
+                .map(g -> ResponseEntity.ok(g))
+                .orElse(ResponseEntity.notFound().build());
     }
 }
 

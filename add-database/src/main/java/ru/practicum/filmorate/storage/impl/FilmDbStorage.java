@@ -7,6 +7,7 @@ import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 import ru.practicum.filmorate.model.Film;
 import ru.practicum.filmorate.model.Genre;
+import ru.practicum.filmorate.model.Mpa;
 import ru.practicum.filmorate.storage.FilmStorage;
 
 import java.sql.Date;
@@ -49,9 +50,7 @@ public class FilmDbStorage implements FilmStorage {
             return ps;
         }, keyHolder);
         Number key = keyHolder.getKey();
-        if (key == null) {
-            throw new RuntimeException("БД не вернула id при создании фильма");
-        }
+        if (key == null) throw new RuntimeException("БД не вернула id");
         film.setId(key.longValue());
         saveFilmGenres(film);
         return film;
@@ -67,7 +66,6 @@ public class FilmDbStorage implements FilmStorage {
                 film.getDuration(),
                 film.getMpa() == null ? null : film.getMpa().getId(),
                 film.getId());
-
         jdbcTemplate.update("DELETE FROM film_genre WHERE film_id=?", film.getId());
         saveFilmGenres(film);
         return film;
@@ -88,15 +86,12 @@ public class FilmDbStorage implements FilmStorage {
                         int dur = rs.getInt("duration");
                         if (!rs.wasNull()) f.setDuration(dur);
                         int mpaId = rs.getInt("mpa_id");
-                        if (!rs.wasNull())
-                            mpaStorage.findById(mpaId).ifPresent(f::setMpa);
+                        if (!rs.wasNull()) mpaStorage.findById(mpaId).ifPresent(f::setMpa);
                         return f;
                     }, id);
             if (film != null) {
                 List<Genre> genres = jdbcTemplate.query(
-                        "SELECT g.id, g.name FROM genre g " +
-                                "JOIN film_genre fg ON g.id = fg.genre_id " +
-                                "WHERE fg.film_id=? ORDER BY g.id",
+                        "SELECT g.id, g.name FROM genre g JOIN film_genre fg ON g.id = fg.genre_id WHERE fg.film_id=? ORDER BY g.id",
                         (rs, rn) -> new Genre(rs.getInt("id"), rs.getString("name")),
                         id);
                 film.setGenres(new LinkedHashSet<>(genres));
@@ -123,8 +118,7 @@ public class FilmDbStorage implements FilmStorage {
 
     @Override
     public void addLike(long filmId, long userId) {
-        jdbcTemplate.update("MERGE INTO film_like (film_id, user_id) KEY(film_id, user_id) VALUES (?, ?)",
-                filmId, userId);
+        jdbcTemplate.update("MERGE INTO film_like (film_id, user_id) KEY(film_id, user_id) VALUES (?, ?)", filmId, userId);
     }
 
     @Override
@@ -134,11 +128,9 @@ public class FilmDbStorage implements FilmStorage {
 
     private void saveFilmGenres(Film film) {
         if (film.getId() == null || film.getGenres() == null) return;
-
         LinkedHashSet<Genre> unique = new LinkedHashSet<>(film.getGenres());
         for (Genre g : unique) {
-            jdbcTemplate.update("INSERT INTO film_genre (film_id, genre_id) VALUES (?, ?)",
-                    film.getId(), g.getId());
+            jdbcTemplate.update("INSERT INTO film_genre (film_id, genre_id) VALUES (?, ?)", film.getId(), g.getId());
         }
     }
 }

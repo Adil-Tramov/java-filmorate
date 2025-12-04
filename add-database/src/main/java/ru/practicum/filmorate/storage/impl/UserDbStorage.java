@@ -25,7 +25,6 @@ public class UserDbStorage implements UserStorage {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-
     @Override
     public User create(User user) {
         String sql = "INSERT INTO users (email, login, name, birthday) VALUES (?,?,?,?)";
@@ -39,9 +38,7 @@ public class UserDbStorage implements UserStorage {
             return ps;
         }, keyHolder);
         Number key = keyHolder.getKey();
-        if (key == null) {
-            throw new RuntimeException("БД не вернула id при создании пользователя");
-        }
+        if (key == null) throw new RuntimeException("БД не вернула id");
         user.setId(key.longValue());
         return user;
     }
@@ -108,7 +105,7 @@ public class UserDbStorage implements UserStorage {
         return users;
     }
 
-
+    /* ---------- взаимная дружба ---------- */
     @Override
     public void addFriend(long userId, long friendId) {
         jdbcTemplate.update(
