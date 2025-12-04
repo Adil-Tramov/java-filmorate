@@ -49,8 +49,10 @@ public class FilmDbStorage implements FilmStorage {
             return ps;
         }, keyHolder);
         Number key = keyHolder.getKey();
-        if (key != null) film.setId(key.longValue());
-
+        if (key == null) {
+            throw new RuntimeException("БД не вернула id при создании фильма");
+        }
+        film.setId(key.longValue());
         saveFilmGenres(film);
         return film;
     }

@@ -25,6 +25,7 @@ public class UserDbStorage implements UserStorage {
         this.jdbcTemplate = jdbcTemplate;
     }
 
+
     @Override
     public User create(User user) {
         String sql = "INSERT INTO users (email, login, name, birthday) VALUES (?,?,?,?)";
@@ -38,7 +39,10 @@ public class UserDbStorage implements UserStorage {
             return ps;
         }, keyHolder);
         Number key = keyHolder.getKey();
-        if (key != null) user.setId(key.longValue());
+        if (key == null) {
+            throw new RuntimeException("БД не вернула id при создании пользователя");
+        }
+        user.setId(key.longValue());
         return user;
     }
 
