@@ -11,6 +11,7 @@ import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.model.MpaRating;
 import ru.yandex.practicum.filmorate.storage.FilmStorage;
 
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -116,31 +117,25 @@ public class FilmDbStorage implements FilmStorage {
 
     @Override
     public void delete(Long id) {
-        String sql = "DELETE FROM films WHERE id = ?";
-        jdbcTemplate.update(sql, id);
+        jdbcTemplate.update("DELETE FROM films WHERE id = ?", id);
     }
 
     @Override
     public void addLike(Long filmId, Long userId) {
-        String sql = "INSERT INTO likes (film_id, user_id) VALUES (?, ?)";
-        jdbcTemplate.update(sql, filmId, userId);
+        jdbcTemplate.update("INSERT INTO likes (film_id, user_id) VALUES (?, ?)", filmId, userId);
     }
 
     @Override
     public void removeLike(Long filmId, Long userId) {
-        String sql = "DELETE FROM likes WHERE film_id = ? AND user_id = ?";
-        jdbcTemplate.update(sql, filmId, userId);
+        jdbcTemplate.update("DELETE FROM likes WHERE film_id = ? AND user_id = ?", filmId, userId);
     }
 
     @Override
     public List<Film> getMostPopularFilms(int count) {
         String sql = "SELECT f.*, mr.name as mpa_name, COUNT(l.user_id) as like_count " +
-                "FROM films f " +
-                "LEFT JOIN mpa_ratings mr ON f.mpa_rating_id = mr.id " +
+                "FROM films f LEFT JOIN mpa_ratings mr ON f.mpa_rating_id = mr.id " +
                 "LEFT JOIN likes l ON f.id = l.film_id " +
-                "GROUP BY f.id, f.name, f.description, f.release_date, f.duration, f.mpa_rating_id, mr.name " +
-                "ORDER BY like_count DESC, f.id ASC " +
-                "LIMIT ?";
+                "GROUP BY f.id ORDER BY like_count DESC, f.id ASC LIMIT ?";
 
         List<Film> films = jdbcTemplate.query(sql, filmRowMapper, count);
         loadGenresForFilms(films);
@@ -149,63 +144,55 @@ public class FilmDbStorage implements FilmStorage {
     }
 
     private Set<Genre> getGenresForFilm(Long filmId) {
-        String sql = "SELECT g.id, g.name FROM genres g JOIN film_genres fg ON g.id = fg.genre_id WHERE fg.film_id = ?";
-        return new HashSet<>(jdbcTemplate.query(sql, (rs, rowNum) -> {
-            Genre genre = new Genre();
-            genre.setId(rs.getInt("id"));
-            genre.setName(rs.getString("name"));
-            return genre;
-        }, filmId));
+        return new HashSet<>(jdbcTemplate.query(
+                "SELECT g.id, g.name FROM genres g JOIN film_genres fg ON g.id = fg.genre_id WHERE fg.film_id = ?",
+                (rs, rowNum) -> new Genre(rs.getInt("id"), rs.getString("name")), filmId
+        ));
     }
 
     private Set<Long> getLikesForFilm(Long filmId) {
-        String sql = "SELECT user_id FROM likes WHERE film_id = ?";
-        return new HashSet<>(jdbcTemplate.query(sql, (rs, rowNum) -> rs.getLong("user_id"), filmId));
+        return new HashSet<>(jdbcTemplate.query(
+                "SELECT user_id FROM likes WHERE film_id = ?",
+                (rs, rowNum) -> rs.getLong("user_id"), filmId
+        ));
     }
 
     private void loadGenresForFilms(List<Film> films) {
         if (films.isEmpty()) return;
-        String filmIds = films.stream().map(f -> f.getId().toString()).collect(Collectors.joining(","));
-        String sql = "SELECT fg.film_id, g.id, g.name FROM film_genres fg JOIN genres g ON fg.genre_id = g.id WHERE fg.film_id IN (" + filmIds + ")";
+        String ids = films.stream().map(f -> f.getId().toString()).collect(Collectors.joining(","));
+        String sql = "SELECT fg.film_id, g.id, g.name FROM film_genres fg JOIN genres g ON fg.genre_id = g.id WHERE fg.film_id IN (" + ids + ")";
 
-        Map<Long, Set<Genre>> filmGenres = new HashMap<>();
+        Map<Long, Set<Genre>> map = new HashMap<>();
         jdbcTemplate.query(sql, rs -> {
-            Long filmId = rs.getLong("film_id");
-            filmGenres.computeIfAbsent(filmId, k -> new HashSet<>()).add(new Genre(rs.getInt("id"), rs.getString("name")));
+            map.computeIfAbsent(rs.getLong("film_id"), k -> new HashSet<>()).add(new Genre(rs.getInt("id"), rs.getString("name")));
         });
 
-        films.forEach(f -> f.setGenres(filmGenres.getOrDefault(f.getId(), new HashSet<>())));
+        films.forEach(f -> f.setGenres(map.getOrDefault(f.getId(), new HashSet<>())));
     }
 
     private void loadLikesForFilms(List<Film> films) {
         if (films.isEmpty()) return;
-        String filmIds = films.stream().map(f -> f.getId().toString()).collect(Collectors.joining(","));
-        String sql = "SELECT film_id, user_id FROM likes WHERE film_id IN (" + filmIds + ")";
+        String ids = films.stream().map(f -> f.getId().toString()).collect(Collectors.joining(","));
+        String sql = "SELECT film_id, user_id FROM likes WHERE film_id IN (" + ids + ")";
 
-        Map<Long, Set<Long>> filmLikes = new HashMap<>();
+        Map<Long, Set<Long>> map = new HashMap<>();
         jdbcTemplate.query(sql, rs -> {
-            filmLikes.computeIfAbsent(rs.getLong("film_id"), k -> new HashSet<>()).add(rs.getLong("user_id"));
+            map.computeIfAbsent(rs.getLong("film_id"), k -> new HashSet<>()).add(rs.getLong("user_id"));
         });
 
-        films.forEach(f -> f.setLikes(filmLikes.getOrDefault(f.getId(), new HashSet<>())));
+        films.forEach(f -> f.setLikes(map.getOrDefault(f.getId(), new HashSet<>())));
     }
 
     private void validateMpaExists(Integer mpaId) {
         if (mpaId == null) return;
-        String sql = "SELECT COUNT(*) FROM mpa_ratings WHERE id = ?";
-        Integer count = jdbcTemplate.queryForObject(sql, Integer.class, mpaId);
-        if (count == null || count == 0) {
-            throw new NotFoundException("Рейтинг MPA не найден с id: " + mpaId);
-        }
+        Integer count = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM mpa_ratings WHERE id = ?", Integer.class, mpaId);
+        if (count == null || count == 0) throw new NotFoundException("Рейтинг MPA не найден с id: " + mpaId);
     }
 
     private void validateGenresExist(Set<Genre> genres) {
         if (genres == null || genres.isEmpty()) return;
-        List<Integer> genreIds = genres.stream().map(Genre::getId).collect(Collectors.toList());
-        String sql = "SELECT COUNT(*) FROM genres WHERE id IN (" + genreIds.stream().map(String::valueOf).collect(Collectors.joining(",")) + ")";
-        Integer count = jdbcTemplate.queryForObject(sql, Integer.class);
-        if (count == null || count != genres.size()) {
-            throw new NotFoundException("Один или несколько жанров не найдены");
-        }
+        String ids = genres.stream().map(g -> g.getId().toString()).collect(Collectors.joining(","));
+        Integer count = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM genres WHERE id IN (" + ids + ")", Integer.class);
+        if (count == null || count != genres.size()) throw new NotFoundException("Один или несколько жанров не найдены");
     }
 }
