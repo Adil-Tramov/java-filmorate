@@ -1,71 +1,70 @@
 package ru.yandex.practicum.filmorate.controller;
 
-import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.bind.annotation.RestController;
-import ru.yandex.practicum.filmorate.exception.NotFoundException;
-import ru.yandex.practicum.filmorate.model.Film;
+import org.springframework.web.bind.annotation.*;
+import ru.yandex.practicum.filmorate.dto.FilmDto;
+import ru.yandex.practicum.filmorate.dto.NewFilmRequest;
+import ru.yandex.practicum.filmorate.dto.UpdateFilmRequest;
 import ru.yandex.practicum.filmorate.service.FilmService;
-import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 
 import java.util.Collection;
 
+import static ru.yandex.practicum.filmorate.utils.Utils.clearStringData;
+
+@Slf4j
 @RestController
 @RequestMapping("/films")
+@RequiredArgsConstructor
 public class FilmController {
-    private final FilmStorage storage;
-    private final FilmService service;
-
-    @Autowired
-    public FilmController(FilmStorage storage, FilmService service) {
-        this.storage = storage;
-        this.service = service;
-    }
+    private final FilmService filmService;
 
     @GetMapping
-    public Collection<Film> all() {
-        return storage.findAll();
+    public Collection<FilmDto> findAll() {
+        log.info("Получен запрос на получение данных о всех фильмах");
+        return filmService.findAll();
     }
 
     @GetMapping("/{id}")
-    public Film get(@PathVariable long id) {
-        return storage.findById(id)
-                .orElseThrow(() -> new NotFoundException("Фильм не найден"));
+    public FilmDto find(@PathVariable("id") Long filmId) {
+        log.info("Получен запрос на получение данных о фильме {}", filmId);
+        return filmService.find(filmId);
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public Film create(@Valid @RequestBody Film film) {
-        return storage.create(film);
+    public FilmDto create(@RequestBody NewFilmRequest film) {
+        log.info("Получен запрос на добавление фильма");
+        clearStringData(film);
+        return filmService.create(film);
     }
 
     @PutMapping
-    public Film update(@Valid @RequestBody Film film) {
-        return storage.update(film);
+    public FilmDto update(@RequestBody UpdateFilmRequest film) {
+        log.info("Получен запрос на обновление фильма с id = {}", film.getId());
+        clearStringData(film);
+        return filmService.update(film);
     }
 
     @PutMapping("/{id}/like/{userId}")
-    public void addLike(@PathVariable long id, @PathVariable long userId) {
-        service.addLike(id, userId);
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void addLike(@PathVariable("id") Long filmId, @PathVariable("userId") Long userId) {
+        log.info("Получен запрос на добавление лайка для фильма с id = {}", filmId);
+        filmService.addLike(filmId, userId);
     }
 
     @DeleteMapping("/{id}/like/{userId}")
-    public void removeLike(@PathVariable long id, @PathVariable long userId) {
-        service.removeLike(id, userId);
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteLike(@PathVariable("id") Long filmId, @PathVariable("userId") Long userId) {
+        log.info("Получен запрос на удаление лайка для фильма с id = {}", filmId);
+        filmService.deleteLike(filmId, userId);
     }
 
     @GetMapping("/popular")
-    public Collection<Film> popular(@RequestParam(defaultValue = "10") int count) {
-        return service.popular(count);
+    public Collection<FilmDto> getPopularFilms(@RequestParam(name = "count", defaultValue = "10") int count) {
+        log.info("Получен запрос на список популярных фильмов в количестве {} шт.", count);
+        return filmService.getPopularFilms(count);
     }
+
 }
