@@ -5,7 +5,7 @@ import lombok.Data;
 
 @Data
 @Builder(toBuilder = true)
-public class Genre {
+public class Rates {
     private Long id;
     private String name;
 }

@@ -1,82 +1,72 @@
-package ru.practicum.filmorate.controller;
+package ru.yandex.practicum.filmorate.controller;
 
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-import ru.practicum.filmorate.exception.ValidationException;
-import ru.practicum.filmorate.model.User;
-import ru.practicum.filmorate.storage.UserStorage;
+import org.springframework.web.bind.annotation.*;
+import ru.yandex.practicum.filmorate.dto.NewUserRequest;
+import ru.yandex.practicum.filmorate.dto.UpdateUserRequest;
+import ru.yandex.practicum.filmorate.dto.UserDto;
+import ru.yandex.practicum.filmorate.service.UserService;
 
-import java.time.LocalDate;
-import java.util.List;
+import java.util.Collection;
 
+import static ru.yandex.practicum.filmorate.utils.Utils.clearStringData;
+
+@Slf4j
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/users")
 public class UserController {
 
-    private final UserStorage userStorage;
-
-    public UserController(UserStorage userStorage) {
-        this.userStorage = userStorage;
-    }
-
-    private void validateUser(User user) {
-        if (user.getEmail() == null || !user.getEmail().contains("@")) {
-            throw new ValidationException("Некорректный email");
-        }
-        if (user.getLogin() == null || user.getLogin().contains(" ")) {
-            throw new ValidationException("Логин не должен содержать пробелы");
-        }
-        if (user.getBirthday() != null && user.getBirthday().isAfter(LocalDate.now())) {
-            throw new ValidationException("Дата рождения не может быть в будущем");
-        }
-        if (user.getName() == null || user.getName().trim().isEmpty()) {
-            user.setName(user.getLogin());
-        }
-    }
+    private final UserService userService;
 
     @GetMapping
-    public List<User> getAll() {
-        return userStorage.findAll();
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<User> getById(@PathVariable long id) {
-        return userStorage.findUserById(id)
-                .map(u -> new ResponseEntity<User>(u, HttpStatus.OK))
-                .orElse(new ResponseEntity<User>(HttpStatus.NOT_FOUND));
+    public Collection<UserDto> findAll() {
+        log.info("Получен запрос на получение данных о всех пользователях");
+        return userService.findAll();
     }
 
     @PostMapping
-    public ResponseEntity<User> create(@RequestBody User user) {
-        validateUser(user);
-        User created = userStorage.create(user);
-        return new ResponseEntity<User>(created, HttpStatus.CREATED);
+    @ResponseStatus(HttpStatus.CREATED)
+    public UserDto create(@RequestBody NewUserRequest user) {
+        log.info("Получен запрос на добавление пользователя");
+        clearStringData(user);
+        return userService.create(user);
     }
 
     @PutMapping
-    public ResponseEntity<User> update(@RequestBody User user) {
-        validateUser(user);
-        userStorage.update(user);
-        return new ResponseEntity<User>(user, HttpStatus.OK);
+    public UserDto update(@RequestBody UpdateUserRequest user) {
+        log.info("Получен запрос на обновление пользователя с id = {}", user.getId());
+        clearStringData(user);
+        return userService.update(user);
+    }
+
+    @GetMapping("/{id}/friends")
+    public Collection<UserDto> getFriends(@PathVariable("id") Long userId) {
+        log.info("Получен запрос за получение списка друзей пользователя {}", userId);
+        return userService.getFriends(userId);
     }
 
     @PutMapping("/{id}/friends/{friendId}")
-    public ResponseEntity<Void> addFriend(@PathVariable long id, @PathVariable long friendId) {
-        userStorage.addFriend(id, friendId);
-        return new ResponseEntity<Void>(HttpStatus.OK);
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void addFriend(@PathVariable("id") Long userId, @PathVariable("friendId") Long friendId) {
+        log.info("Получен запрос за добавление в друзья к {} пользователя {}", userId, friendId);
+        userService.addFriend(userId, friendId);
     }
 
     @DeleteMapping("/{id}/friends/{friendId}")
-    public ResponseEntity<Void> removeFriend(@PathVariable long id, @PathVariable long friendId) {
-        userStorage.removeFriend(id, friendId);
-        return new ResponseEntity<Void>(HttpStatus.NO_CONTENT);
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteFriend(@PathVariable("id") Long userId, @PathVariable("friendId") Long friendId) {
+        log.info("Получен запрос за удаление из друзей {} пользователя {}", userId, friendId);
+        userService.deleteFriend(userId, friendId);
     }
+
+    @GetMapping("/{id}/friends/common/{otherId}")
+    public Collection<UserDto> findCommonFriends(@PathVariable("id") Long userId, @PathVariable("otherId") Long friendId) {
+        log.info("Получен запрос за нахождение общих друзей у {} и {}", userId, friendId);
+        return userService.findCommonFriends(userId, friendId);
+    }
+
+
 }
