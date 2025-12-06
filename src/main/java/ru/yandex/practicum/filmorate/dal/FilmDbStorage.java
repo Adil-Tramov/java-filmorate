@@ -31,8 +31,12 @@ public class FilmDbStorage extends BaseDbStorage<Film> implements FilmStorage {
     @Qualifier("db-rates")
     private RatesStorage ratesStorage;
 
-    private static final String FIND_ALL_FILMS_QUERY = "SELECT * FROM films";
-    private static final String FIND_FILM_QUERY = "SELECT * FROM films WHERE id = ?";
+    private static final String FIND_ALL_FILMS_QUERY =
+            "SELECT id, name, description, release_date, duration, rating_id FROM films";
+
+    private static final String FIND_FILM_QUERY =
+            "SELECT id, name, description, release_date, duration, rating_id FROM films WHERE id = ?";
+
     private static final String INSERT_QUERY = "INSERT INTO films(name, description, release_date, duration, rating_id) " +
             "VALUES (?, ?, ?, ?, ?)";
     private static final String UPDATE_QUERY = "UPDATE films SET " +

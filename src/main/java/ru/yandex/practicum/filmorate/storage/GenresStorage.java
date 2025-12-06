@@ -4,6 +4,7 @@ import ru.yandex.practicum.filmorate.model.Genre;
 
 import java.util.Collection;
 import java.util.Optional;
+import java.util.Set;
 
 public interface GenresStorage {
     Collection<Genre> findAll();
@@ -14,4 +15,5 @@ public interface GenresStorage {
 
     void setGenresForFilm(long filmId, Collection<Genre> genres);
 
+    Set<Long> findAllExistingIds(Set<Long> genreIds);
 }

@@ -16,10 +16,6 @@ import java.util.stream.Collectors;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class FilmMapper {
     public static Film mapToFilm(NewFilmRequest request) {
-//        Set<Integer> genres = new HashSet<>();
-//        request.getGenres().forEach(genre -> {
-//            genres.add((int) ((LinkedHashMap) genre).get("id"));
-//        });
 
         return Film.builder()
                 .name(request.getName())

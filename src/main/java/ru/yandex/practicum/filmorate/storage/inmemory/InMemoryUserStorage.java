@@ -8,7 +8,13 @@ import ru.yandex.practicum.filmorate.exception.ValidationException;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.storage.UserStorage;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
 import static ru.yandex.practicum.filmorate.utils.Utils.getNextId;
 
@@ -46,7 +52,7 @@ public class InMemoryUserStorage implements UserStorage {
 
     @Override
     public void delete(Long id) {
-        if (find(id) == null) {
+        if (find(id).isEmpty()) {
             return;
         }
 
@@ -62,14 +68,13 @@ public class InMemoryUserStorage implements UserStorage {
 
     @Override
     public User update(User user) {
-        if (find(user.getId()) == null) {
+        if (find(user.getId()).isEmpty()) {
             return null;
         }
 
-        // Случай, когда при обновлении меняется email и нужно удалить старый из коллекции email-ов
         final User oldUser = users.get(user.getId());
         if (!oldUser.getEmail().equalsIgnoreCase(user.getEmail())) {
-            userEmails.remove(oldUser.getName().toLowerCase());
+            userEmails.remove(oldUser.getEmail().toLowerCase());
             userEmails.add(user.getEmail().toLowerCase());
         }
 
@@ -96,5 +101,4 @@ public class InMemoryUserStorage implements UserStorage {
 
         return Optional.of(users.get(id));
     }
-
 }
